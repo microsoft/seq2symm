@@ -1,0 +1,8 @@
+Datasets used to train the models
+
+  1.  the homo-oligomer data with the labels and protein sequences
+  2.  the train/test splits file
+  3.  the denovo and UniFold evaluation datasets are in the Supplementary material
+  4.  the predictions from the model on various datasets, predictions on proteomes are available as part of Supplementary material on Nature Communications
+  5.  two trained models: one with and one without distillation
+  6.  links to the proteome files are below
