@@ -4,12 +4,6 @@ Datasets used to train the models
         http://files.ipd.uw.edu/pub/seq2symm/datasets.zip
   
   2.  the denovo and UniFold evaluation datasets are in the Supplementary material
-  
-  3.  the predictions from the model on various datasets, predictions on proteomes
-      http://files.ipd.uw.edu/pub/seq2symm/predictions.zip
-  
-  4.  the trained model
-      http://files.ipd.uw.edu/pub/seq2symm/ESM2_model.ckpt
 
-  5.  links to the proteome files are below:
+  3.  links to the proteome files are below:
       https://www.uniprot.org/proteomes/UP000001013
