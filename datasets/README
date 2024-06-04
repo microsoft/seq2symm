@@ -1,9 +1,17 @@
 Datasets used to train the models
 
-  1.  the homo-oligomer data with the labels and protein sequences and the train/test splits file
+  1.  The homo-oligomer PDB ids with the labels were downloaded from the PDB: https://www.rcsb.org/ 
+      This labeled data and the train/val/test splits can be downloaded here: 
         http://files.ipd.uw.edu/pub/seq2symm/datasets.zip
+
+      The protein sequences corresponding to the PDB ids in homo-oligomer dataset can be obtained from: https://www.rcsb.org/
   
-  2.  the denovo and UniFold evaluation datasets are in the Supplementary material
+  2.  The denovo and UniFold evaluation datasets are from prior published work and listed in the Supplementary material. The links to the publications from where these datasets were downloaded are below:
+      UniFold manuscript: https://www.biorxiv.org/content/10.1101/2022.08.30.505833v1
+      Publications from which the denovo data was obtained: 
+      https://www.nature.com/articles/s41586-023-06415-8
+      https://www.science.org/doi/10.1126/science.add1964
+      
 
   3.  links to the proteome files are below:
       https://www.uniprot.org/proteomes/UP000001013
