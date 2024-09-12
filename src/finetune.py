@@ -321,26 +321,31 @@ class MultiheadedNoSharedRobertaLMHead(nn.Module):
 
 
 class ESMFinetuner(LightningModule):
-    ## params, n_classes, n_epoch=100, lr=1.0e-4, l2_coeff=1.0e-2, interactive=False):
+    ## params: n_classes=17, n_epoch=100, lr=1.0e-4, l2_coeff=1.0e-2, interactive=False):
     def __init__(self, params, **kwargs: Any) -> None:  
 
         super().__init__()
 
         self.params = params
-        self.n_classes = params.n_classes
-        self.model_dir = params.model_dir
-        self.output_model = params.output_model
-        self.n_epoch = params.n_epoch
-        self.init_lr = params.lr
-        self.l2_coeff = params.l2_coeff
-        self.port = params.port
-        self.ACCUM_STEP = 1
-        self.batch_size = params.bs
-        print('Batch size: ',self.batch_size)
-        print('ESMFinetuner parameters:',params)
+        if hasattr(params, 'test_mode') and not(params.test_mode):
+            self.n_classes = params.n_classes
+            self.model_dir = params.model_dir
+            self.output_model = params.output_model
+            self.n_epoch = params.n_epoch
+            self.init_lr = params.lr
+            self.l2_coeff = params.l2_coeff
+            self.port = params.port
+            self.ACCUM_STEP = 1
+            self.batch_size = params.bs
+            print('Batch size: ',self.batch_size)
+            self.model = self.config_model(params.num_layers_frozen)
+            self.set_loss_and_metrics()
+        else:
+            self.n_classes = params.n_classes
+            self.n_epoch = params.n_epoch
+            self.batch_size = params.bs
+            self.model = self.config_model(params.num_layers_frozen)
 
-        self.model = self.config_model(params.num_layers_frozen)
-        self.set_loss_and_metrics()
 
         """## HACK TO GET IT TO PREDICT ON TRAINING DATA
         params.weighted_sampler = 0

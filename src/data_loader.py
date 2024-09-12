@@ -180,10 +180,6 @@ def parse_a3m(filename):
         return (None, None)    
     return (msa_ids[0], msa[0])
 
-def fasta_loader_old(item, params):
-    fasta = get_fasta(params.data_dir + '/a3m/' + item[1][:3] + '/' + item[1] + '.a3m.gz')    
-    return fasta
-
 
 # item is a tuple: ('PDBID', 'HASH')  or ('PDBID', 'FILEPATH')
 def fasta_loader(item, params): 
@@ -214,39 +210,6 @@ def one_hot_encode(label, num_classes):
     one_hot = np.zeros((num_classes))
     one_hot[label] = 1
     return one_hot
-
-
-# Load PDB examples
-# item is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'LENGTH')
-def loader_pdb(item, params):  
-    msa = parse_a3m(params.data_dir + '/a3m/' + item[1][:3] + '/' + item[1] + '.a3m.gz')
-    labels = item[3].split(' ')
-    homomer_label_vecs = []
-    # map labels to integers and one-hot encode them
-    if params.granularity == COARSE:
-        local_map = symm_to_coarselabel_map
-    else:
-        local_map = symm_to_label_map
-
-    for l in labels:
-        if (l in local_map):
-            homomer_label = local_map[l]
-        else:
-            homomer_label = params.n_classes-1
-        homomer_label_vecs.append(one_hot_encode(homomer_label, num_classes=params.n_classes))
-    # address multilabel cases
-    if len(homomer_label_vecs) > 1:
-        homomer_label_vecs = np.row_stack(homomer_label_vecs)
-        homomer_label_vecs = np.sum(homomer_label_vecs,axis=0)
-    else:
-        homomer_label_vecs = homomer_label_vecs[0]
-
-    msa = greedy_select(msa, num_seqs=128) # can change this to pass more/fewer sequences    
-
-    data = {"msa":msa, "label": homomer_label_vecs, "pdbid": item[0]}
-
-    return data
-
 
 
 def greedy_select(msa: List[Tuple[str, str]], num_seqs: int, mode: str = "max") -> List[Tuple[str, str]]:
@@ -285,7 +248,7 @@ def collate_fn_template(data, batch_converter) -> dict:
     
     for item in data:
         if item != None:
-            x = item["msa"]
+            x = item["seq"]
             y = item["label"]
             if x != (None, None):
                 x_all.append(x)
@@ -319,7 +282,7 @@ def collate_two_class_fn_template(data, batch_converter) -> dict:
     pdbids = []    
     
     for item in data:
-        x = item["msa"]
+        x = item["seq"]
         y = item["coarse_y"]
         x_all.append(x)
         y_all_coarse.append(y)
@@ -515,12 +478,12 @@ class CoarseNFineDataset(data.Dataset):
     def __getitem__(self, index):
         ID = self.pdb_dict[self.pdbids[index]]  # ID is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM')
         try:
-            msa = self.fasta_loader((ID[0], str(ID[1])), self.params)
+            seq = self.fasta_loader((ID[0], str(ID[1])), self.params)
             label = ID[3]
             ## get multilabel fine label vector
             homomer_label_vecs_coarse = self.map_labels_to_vectors(label, label_type="coarse")
             homomer_label_vecs_fine = self.map_labels_to_vectors(label, label_type="fine")
-            data = {"msa" : msa,
+            data = {"seq" : seq,
                 "coarse_y": homomer_label_vecs_coarse, "fine_y": homomer_label_vecs_fine, "pdbid": ID[0]}            
 
         except Exception as e:
@@ -569,7 +532,48 @@ class TestFASTALoader(LightningDataModule):
 
         self.params = params
         self.params.test_mode = True
+
+        self.test_pdb_dict = {}  
+        for record in SeqIO.parse(params.fasta_file, "fasta"):
+            sequence_name = record.id      # This gets the sequence name (header)
+            sequence = str(record.seq)
+            self.test_pdb_dict[sequence_name] = (sequence_name, "", '###', "", "U", sequence)
+    
+    def train_dataloader(self):
+        print('Not a training dataloader')
+        return None            
+
+    def val_dataloader(self):
+        print('Not a validation dataloader')
+        return None                    
+
+    def test_dataloader(self):
+        test_dataset = CoarseNFineJointDataset(self.test_pdb_dict, None, self.params, dataset_name='test')            
+        return DataLoader(test_dataset, batch_size=self.params.bs, 
+                          collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
+
+
+
+"""
+Loads .fasta files from a directory. Uses the fasta_loader() method
+Expects the following fields to be set in params:
+    data_dir: data directory that has all the .fasta files
+    meta_data_file (optional): if you have symmetry info or any other labels for each pdbid, you can load those for subsequent analysis
+"""
+
+class TestFASTADirLoader(LightningDataModule):
+    def __init__(self, params, collater):
+        super().__init__()
+
+        self.batch_converter = collater
+        self.collate_fn = partial(collate_fn_template,
+            batch_converter=self.batch_converter
+        )        
+
+        self.params = params
+        self.params.test_mode = True
         label_dict = {}
+        ## load labels from meta_data_file
         if params.meta_data_file:
             print('Reading: ',self.params.meta_data_file)
             df = pd.read_csv(self.params.meta_data_file,header=0,sep=',',dtype='str')
@@ -577,7 +581,6 @@ class TestFASTALoader(LightningDataModule):
                 label_dict[row['pdbid']] = row['symm']
 
         self.test_pdb_dict = {}  
-        # dict of tuples ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'LENGTH')
         for root, _, files in os.walk(self.params.data_dir):
             for fname in files:
                 filepath = os.path.join(root, fname)
@@ -587,6 +590,7 @@ class TestFASTALoader(LightningDataModule):
                 else:
                     if len(label_dict) == 0:  
                         self.test_pdb_dict[pdbid] = (pdbid, filepath, '###', 0, 0)
+    
     
     def train_dataloader(self):
         print('Not a training dataloader')
@@ -665,7 +669,7 @@ class CoarseNFineJointDataset(data.Dataset):
                 self.cluster_labels.append(val[2])
 
         if self.params.use_soft_labels:
-            print('[LOG] using soft labels')                
+            print('[LOG] using soft labels',type(self.params.use_soft_labels))
 
     def __get_rank__(self):
         if not dist.is_available():
@@ -693,8 +697,6 @@ class CoarseNFineJointDataset(data.Dataset):
 
         return weights
         
-
-
     def get_exp_decay_wts(self, num: int) -> list:
         if num==1:
             return [1.0]
@@ -769,16 +771,19 @@ class CoarseNFineJointDataset(data.Dataset):
 
 
     def __getitem__(self, index):
-        ID = self.pdb_dict[self.pdbids[index]]  # ID is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM')
+        ID = self.pdb_dict[self.pdbids[index]]  # ID is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'SEQUENCE')
         try:
-            fasta = self.loader((ID[0], str(ID[1])), self.params)
+            if self.loader:
+                fasta = self.loader((ID[0], str(ID[1])), self.params)
+            else:
+                fasta = (ID[0], ID[4])
             label = ID[3] ## string: "C1, C2, C3"
             ## get multilabel label vector
             if self.params.use_soft_labels:
                 homomer_label_vecs_joint = self.map_labels_to_soft_vectors(label)
             else:
                 homomer_label_vecs_joint = self.map_labels_to_vectors(label)                
-            data = {"msa" : fasta,
+            data = {"seq" : fasta,
                 "label": homomer_label_vecs_joint, "pdbid": ID[0]}
 
         except Exception as e:
@@ -863,11 +868,11 @@ class SimpleDataset(Dataset):
     def __getitem__(self, index):
         ID = self.pdb_dict[self.pdb_IDs[index]]  # ID is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM')
         try:
-            msa = self.fasta_loader((ID[0], str(ID[1])), self.params)
+            seq = self.fasta_loader((ID[0], str(ID[1])), self.params)
             label = ID[3]
             ## get multilabel fine label vector
             homomer_label_vecs = self.map_labels_to_vectors(label, label_type="fine")
-            data = {"msa" : msa,
+            data = {"seq" : seq,
                 "label": homomer_label_vecs, "pdbid": ID[0]}
 
         except Exception as e:
@@ -938,7 +943,7 @@ class LazyFileloaderDataset(Dataset):
                 symm = 'C1'
 
             symm_vec = self.map_labels_to_vectors(symm)
-            data = {"msa" : (datarow[pdbidx], datarow[seqidx]), "pdbid": datarow[pdbidx], "label": symm_vec}
+            data = {"seq" : (datarow[pdbidx], datarow[seqidx]), "pdbid": datarow[pdbidx], "label": symm_vec}
         except Exception as e:
             print('[LOG] Got exception for: ',index)
             traceback.print_exception(type(e), e, e.__traceback__)
@@ -1036,7 +1041,8 @@ class WeightedDataset(Dataset):
     def __getitem__(self, index):
         ID = self.pdb_dict[self.pdb_IDs[index]]  # ID is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'LENGTH')
         try:
-            data = self.pdb_loader((ID[0], str(ID[1]), str(ID[2]), ID[3], self.pdb_IDs[index]), self.params)  # data is a dict {"msa", "label"}
+            # data is a dict {"seq", "label"}
+            data = self.pdb_loader((ID[0], str(ID[1]), str(ID[2]), ID[3], self.pdb_IDs[index]), self.params)  
         except Exception as e:
             print('[LOG] Got exception for: ',index,self.pdb_IDs[index],e)            
             traceback.print_exception(type(e), e, e.__traceback__)          
