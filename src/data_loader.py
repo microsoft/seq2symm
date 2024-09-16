@@ -88,7 +88,7 @@ def get_train_valid_set_seq_split(params):
     # compile training and validation sets
     train_pdb_dict = {}
     valid_pdb_dict = {}
-    test_pdb_dict = {}
+    test_pdb_dict = {}    
     for _, row in df.iterrows():
         if (int(row['CLUSTER']) in splits['train_clusterids']):
             train_pdb_dict[row['CHAINID']] = (row['CHAINID'], row['HASH'], row['CLUSTER'], row['SYMM'])
@@ -118,7 +118,7 @@ def read_data(params):
     # compile training and validation sets
     train_pdb_dict = {}
     valid_pdb_dict = {}
-    test_pdb_dict = {}
+    test_pdb_dict = {}    
     for _, row in df.iterrows():
         if (int(row['CLUSTER']) in splits['train_clusterids']):
             train_pdb_dict[row['CHAINID']] = (row['CHAINID'], row['HASH'], row['CLUSTER'], row['SYMM'], len(row['SEQUENCE']))
@@ -129,9 +129,9 @@ def read_data(params):
 
     print('[LOG] Train, Validation, Test set sizes: ',len(train_pdb_dict),len(valid_pdb_dict),len(test_pdb_dict))
 
-    datadict = {"train_split": train_pdb_dict, "valid_split": valid_pdb_dict,
+    datadict = {"train_split": train_pdb_dict, "valid_split": valid_pdb_dict, 
                 "test_split": test_pdb_dict, "clusterid_to_pdbids": clusterid_to_pdbids}
-
+    
     return datadict
 
 ## Written especially for ESM-MSA
@@ -175,21 +175,21 @@ def parse_a3m(filename):
             if len(msa) == 10000:
                 break
     except Exception as e:
-        print('[LOG] File reading error for: ',filename)
-        traceback.print_exception(type(e), e, e.__traceback__)
-        return (None, None)
+        print('[LOG] File reading error for: ',filename)            
+        traceback.print_exception(type(e), e, e.__traceback__)  
+        return (None, None)    
     return (msa_ids[0], msa[0])
 
 
 # item is a tuple: ('PDBID', 'HASH')  or ('PDBID', 'FILEPATH')
-def fasta_loader(item, params):
+def fasta_loader(item, params): 
     if hasattr(params, 'test_mode') and params.test_mode:
         return read_fasta(item[1])
     else:
         if item[0].startswith('UniRef50'):
             return read_fasta(params.data_dir + '/fastas/' + item[1][0:2] + '/' + item[1][2:] + '/' + item[0] + '.fasta')
         else:
-            return read_fasta(params.data_dir + '/fastas/' + item[0][1:3] + '/' + item[0].split(':')[0] + '.fasta')
+            return read_fasta(params.data_dir + '/fastas/' + item[0][1:3] + '/' + item[0].split(':')[0] + '.fasta')   
 
 
 def get_fasta(a3mfilename):
@@ -245,7 +245,7 @@ def collate_fn_template(data, batch_converter) -> dict:
     x_all = []
     y_all = []
     pdbids = []
-
+    
     for item in data:
         if item != None:
             x = item["seq"]
@@ -259,8 +259,8 @@ def collate_fn_template(data, batch_converter) -> dict:
     try:
         _, _, tokens = batch_converter(x_all)
     except Exception as e:
-        print('[LOG] Got exception for: ',pdbids)
-        traceback.print_exception(type(e), e, e.__traceback__)
+        print('[LOG] Got exception for: ',pdbids)            
+        traceback.print_exception(type(e), e, e.__traceback__) 
         return None
 
     if tokens.shape[1] > 1024:
@@ -279,8 +279,8 @@ def collate_two_class_fn_template(data, batch_converter) -> dict:
     x_all = []
     y_all_coarse = []
     y_all_fine = []
-    pdbids = []
-
+    pdbids = []    
+    
     for item in data:
         x = item["seq"]
         y = item["coarse_y"]
@@ -288,18 +288,18 @@ def collate_two_class_fn_template(data, batch_converter) -> dict:
         y_all_coarse.append(y)
         y = item["fine_y"]
         y_all_fine.append(y)
-        pdbids.append(item["pdbid"])
+        pdbids.append(item["pdbid"])        
 
     # Convert to tokens
     try:
         _, _, tokens = batch_converter(x_all)
-    except Exception as e:
-        print('[LOG] Got exception for: ',pdbids)
+    except Exception as e:    
+        print('[LOG] Got exception for: ',pdbids)            
         traceback.print_exception(type(e), e, e.__traceback__)
         return None
 
     if tokens.shape[2] > 1024:
-        print('Big MSA',tokens.shape)
+        print('Big MSA',tokens.shape)            
         tokens = torch.narrow(tokens,2,0,1024)
 
     y_coarse = torch.from_numpy(np.row_stack(y_all_coarse))
@@ -323,7 +323,7 @@ class SimpleHomomerDataLoader(LightningDataModule):
         self.collate_fn = partial(collate_fn_template,
             batch_converter=self.batch_converter
         )
-        self.train_pdb_dict, self.valid_pdb_dict, self.test_pdb_dict = get_train_valid_set_seq_split(self.params)
+        self.train_pdb_dict, self.valid_pdb_dict, self.test_pdb_dict = get_train_valid_set_seq_split(self.params)  
         self.n_train = len(self.train_pdb_dict)
         self.n_valid = len(self.valid_pdb_dict)
         self.n_test = len(self.test_pdb_dict)
@@ -334,7 +334,7 @@ class SimpleHomomerDataLoader(LightningDataModule):
     def train_dataloader(self):
         train_dataset = SimpleDataset(self.train_pdb_dict, fasta_loader, self.params, 'train')
         if self.params.weighted_sampler == 1:
-            train_sampler = DistributedWeightedMySampler(train_dataset, shuffle=True, ddp=False)
+            train_sampler = DistributedWeightedMySampler(train_dataset, shuffle=True, ddp=False) 
             dl = DataLoader(train_dataset, batch_size=self.batch_size, sampler=train_sampler,
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
         else:
@@ -344,13 +344,13 @@ class SimpleHomomerDataLoader(LightningDataModule):
 
 
     def test_dataloader(self):
-        test_dataset = SimpleDataset(self.test_pdb_dict, fasta_loader, self.params, 'test')
+        test_dataset = SimpleDataset(self.test_pdb_dict, fasta_loader, self.params, 'test')    
         return DataLoader(test_dataset, batch_size=self.batch_size,
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
 
     def val_dataloader(self):
         valid_dataset = SimpleDataset(self.valid_pdb_dict, fasta_loader, self.params, 'valid')
-        return DataLoader(valid_dataset, batch_size=self.batch_size,
+        return DataLoader(valid_dataset, batch_size=self.batch_size, 
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
 
 
@@ -365,13 +365,13 @@ class CoarseNFineDataLoader(LightningDataModule):
             batch_converter=self.batch_converter
         )
 
-        self.train_pdb_dict, self.valid_pdb_dict, self.test_pdb_dict = get_train_valid_set_seq_split(self.params)
+        self.train_pdb_dict, self.valid_pdb_dict, self.test_pdb_dict = get_train_valid_set_seq_split(self.params)  
         self.n_train = len(self.train_pdb_dict)
         self.n_valid = len(self.valid_pdb_dict)
         self.n_test = len(self.test_pdb_dict)
 
 
-    # make assignments here (val/train/test split)  called on every process in DDP
+    # make assignments here (val/train/test split)  called on every process in DDP            
     def get_dataset_size(self):
         return self.n_train+self.n_valid
 
@@ -385,19 +385,19 @@ class CoarseNFineDataLoader(LightningDataModule):
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
         else:
             print('Using unweighted sampler for training data..')
-            dl = DataLoader(train_dataset, batch_size=self.batch_size,
-                          collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
-        return dl
+            dl = DataLoader(train_dataset, batch_size=self.batch_size, 
+                          collate_fn=self.collate_fn, num_workers=8, pin_memory=True)         
+        return dl 
 
-
+    
     def test_dataloader(self):
-        test_dataset = CoarseNFineDataset(self.test_pdb_dict, fasta_loader, self.params, 'test')
-        return DataLoader(test_dataset, batch_size=1,
+        test_dataset = CoarseNFineDataset(self.test_pdb_dict, fasta_loader, self.params, 'test')    
+        return DataLoader(test_dataset, batch_size=1, 
                           collate_fn=self.collate_fn, num_workers=4, pin_memory=True)
 
     def val_dataloader(self):
         valid_dataset = CoarseNFineDataset(self.valid_pdb_dict, fasta_loader, self.params, 'valid')
-        return DataLoader(valid_dataset, batch_size=1,
+        return DataLoader(valid_dataset, batch_size=1, 
                           collate_fn=self.collate_fn, num_workers=4, pin_memory=True)
 
 
@@ -405,7 +405,7 @@ class CoarseNFineDataLoader(LightningDataModule):
 class CoarseNFineDataset(data.Dataset):
     def __init__(self, datadict, fasta_loader, params, dataset_name):
         self.pdb_dict = datadict
-        self.pdbids = list(datadict.keys())
+        self.pdbids = list(datadict.keys()) 
         ## this sets the ordering of the examples. At index 0 is the protein whose PDB-id is the first key
         self.fasta_loader = fasta_loader
         self.params = params
@@ -418,12 +418,12 @@ class CoarseNFineDataset(data.Dataset):
                 self.cluster_labels.append(val[2])
 
         self.rank = self.__get_rank__()
-
+        
     def __get_rank__(self):
         if not dist.is_available():
             raise RuntimeError("Requires distributed package to be available")
         return dist.get_rank()
-
+        
 
     def __len__(self):
         return len(self.pdbids)
@@ -446,7 +446,7 @@ class CoarseNFineDataset(data.Dataset):
             weights.append(1/cluster_sizes[self.pdb_dict[_pdbid][2]])
 
         return weights
-
+    
 
     def map_labels_to_vectors(self, label, label_type):
         if label_type=="coarse":
@@ -484,14 +484,14 @@ class CoarseNFineDataset(data.Dataset):
             homomer_label_vecs_coarse = self.map_labels_to_vectors(label, label_type="coarse")
             homomer_label_vecs_fine = self.map_labels_to_vectors(label, label_type="fine")
             data = {"seq" : seq,
-                "coarse_y": homomer_label_vecs_coarse, "fine_y": homomer_label_vecs_fine, "pdbid": ID[0]}
+                "coarse_y": homomer_label_vecs_coarse, "fine_y": homomer_label_vecs_fine, "pdbid": ID[0]}            
 
         except Exception as e:
-            print('[LOG] Got exception for: ',index,self.pdbids[index],e)
-            traceback.print_exception(type(e), e, e.__traceback__)
-            index = np.random.randint(self.__len__)
-            data = self.__getitem__(index)
-
+            print('[LOG] Got exception for: ',index,self.pdbids[index],e)            
+            traceback.print_exception(type(e), e, e.__traceback__)          
+            index = np.random.randint(self.__len__) 
+            data = self.__getitem__(index)      
+            
         return data
 
 
@@ -506,14 +506,14 @@ class TestSequencesLoader(LightningDataModule):
 
         self.params = params
         self.params.test_mode = True
-
+    
     def train_dataloader(self):
         print('Not a training dataloader')
-        return None
+        return None            
 
     def val_dataloader(self):
         print('Not a validation dataloader')
-        return None
+        return None                    
 
     def test_dataloader(self):
         test_dataset = LazyFileloaderDataset(self.params)
@@ -528,28 +528,28 @@ class TestFASTALoader(LightningDataModule):
         self.batch_converter = collater
         self.collate_fn = partial(collate_fn_template,
             batch_converter=self.batch_converter
-        )
+        )        
 
         self.params = params
         self.params.test_mode = True
 
-        self.test_pdb_dict = {}
+        self.test_pdb_dict = {}  
         for record in SeqIO.parse(params.fasta_file, "fasta"):
             sequence_name = record.id      # This gets the sequence name (header)
             sequence = str(record.seq)
             self.test_pdb_dict[sequence_name] = (sequence_name, "", '###', "", "U", sequence)
-
+    
     def train_dataloader(self):
         print('Not a training dataloader')
-        return None
+        return None            
 
     def val_dataloader(self):
         print('Not a validation dataloader')
-        return None
+        return None                    
 
     def test_dataloader(self):
-        test_dataset = CoarseNFineJointDataset(self.test_pdb_dict, None, self.params, dataset_name='test')
-        return DataLoader(test_dataset, batch_size=self.params.bs,
+        test_dataset = CoarseNFineJointDataset(self.test_pdb_dict, None, self.params, dataset_name='test')            
+        return DataLoader(test_dataset, batch_size=self.params.bs, 
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
 
 
@@ -568,7 +568,7 @@ class TestFASTADirLoader(LightningDataModule):
         self.batch_converter = collater
         self.collate_fn = partial(collate_fn_template,
             batch_converter=self.batch_converter
-        )
+        )        
 
         self.params = params
         self.params.test_mode = True
@@ -580,7 +580,7 @@ class TestFASTADirLoader(LightningDataModule):
             for _, row in df.iterrows():
                 label_dict[row['pdbid']] = row['symm']
 
-        self.test_pdb_dict = {}
+        self.test_pdb_dict = {}  
         for root, _, files in os.walk(self.params.data_dir):
             for fname in files:
                 filepath = os.path.join(root, fname)
@@ -588,21 +588,21 @@ class TestFASTADirLoader(LightningDataModule):
                 if pdbid in label_dict:
                     self.test_pdb_dict[pdbid] = (pdbid, filepath, '###', label_dict[pdbid], 0)
                 else:
-                    if len(label_dict) == 0:
+                    if len(label_dict) == 0:  
                         self.test_pdb_dict[pdbid] = (pdbid, filepath, '###', 0, 0)
-
-
+    
+    
     def train_dataloader(self):
         print('Not a training dataloader')
-        return None
+        return None            
 
     def val_dataloader(self):
         print('Not a validation dataloader')
-        return None
+        return None                    
 
     def test_dataloader(self):
-        test_dataset = CoarseNFineJointDataset(self.test_pdb_dict, fasta_loader, self.params, dataset_name='test')
-        return DataLoader(test_dataset, batch_size=self.params.bs,
+        test_dataset = CoarseNFineJointDataset(self.test_pdb_dict, fasta_loader, self.params, dataset_name='test')            
+        return DataLoader(test_dataset, batch_size=self.params.bs, 
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
 
 
@@ -620,31 +620,31 @@ class CoarseNFineJointDataLoader(LightningDataModule):
             batch_converter=self.batch_converter
         )
 
-        self.train_pdb_dict, self.valid_pdb_dict, self.test_pdb_dict = get_train_valid_set_seq_split(self.params)
+        self.train_pdb_dict, self.valid_pdb_dict, self.test_pdb_dict = get_train_valid_set_seq_split(self.params)  
         self.n_train = len(self.train_pdb_dict)
         self.n_valid = len(self.valid_pdb_dict)
         self.n_test = len(self.test_pdb_dict)
 
-    # make assignments here (val/train/test split), called on every process in DDP
+    # make assignments here (val/train/test split), called on every process in DDP            
     def get_dataset_size(self):
         return self.n_train+self.n_valid
 
     def train_dataloader(self):
-        train_dataset = CoarseNFineJointDataset(self.train_pdb_dict, fasta_loader, self.params, dataset_name='train')
+        train_dataset = CoarseNFineJointDataset(self.train_pdb_dict, fasta_loader, self.params, dataset_name='train')        
         if self.params.weighted_sampler == 1:
             print('Setting up weighted sampler for training data..')
-            train_sampler = DistributedWeightedMySampler(train_dataset, num_example_per_epoch=self.params.limit, shuffle=True, ddp=False)
+            train_sampler = DistributedWeightedMySampler(train_dataset, num_example_per_epoch=self.params.limit, shuffle=True, ddp=False)            
             dl = DataLoader(train_dataset, batch_size=self.batch_size, sampler=train_sampler,
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
         else:
             print('Using unweighted sampler for training data..')
-            dl = DataLoader(train_dataset, batch_size=self.batch_size,
+            dl = DataLoader(train_dataset, batch_size=self.batch_size, 
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
-        return dl
-
+        return dl 
+    
     def test_dataloader(self):
-        test_dataset = CoarseNFineJointDataset(self.test_pdb_dict, fasta_loader, self.params, dataset_name='test')
-        return DataLoader(test_dataset, batch_size=self.batch_size,
+        test_dataset = CoarseNFineJointDataset(self.test_pdb_dict, fasta_loader, self.params, dataset_name='test')    
+        return DataLoader(test_dataset, batch_size=self.batch_size, 
                           collate_fn=self.collate_fn, num_workers=8, pin_memory=True)
 
     def val_dataloader(self):
@@ -663,7 +663,7 @@ class CoarseNFineJointDataset(data.Dataset):
         ## construct cluster mapping
         self.cluster_labels = []
         if self.params.weighted_sampler == 1:
-            print('[LOG] using weighted sampler')
+            print('[LOG] using weighted sampler')            
             for pdbid in self.pdbids:  # val is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'LENGTH')
                 val = self.pdb_dict[pdbid]
                 self.cluster_labels.append(val[2])
@@ -674,7 +674,7 @@ class CoarseNFineJointDataset(data.Dataset):
     def __get_rank__(self):
         if not dist.is_available():
             raise RuntimeError("Requires distributed package to be available")
-        return dist.get_rank()
+        return dist.get_rank()            
 
     def __len__(self):
         return len(self.pdbids)
@@ -696,7 +696,7 @@ class CoarseNFineJointDataset(data.Dataset):
             weights.append(1/cluster_sizes[self.pdb_dict[_pdbid][2]])
 
         return weights
-
+        
     def get_exp_decay_wts(self, num: int) -> list:
         if num==1:
             return [1.0]
@@ -749,7 +749,7 @@ class CoarseNFineJointDataset(data.Dataset):
                 if l.startswith('C'):
                     l = 'C17'
                 if l.startswith('D'):
-                    l = 'D12'
+                    l = 'D12'                    
             if l in symm_map:
                 homomer_label = symm_map[l]
                 if type(homomer_label) is list:
@@ -782,16 +782,16 @@ class CoarseNFineJointDataset(data.Dataset):
             if self.params.use_soft_labels:
                 homomer_label_vecs_joint = self.map_labels_to_soft_vectors(label)
             else:
-                homomer_label_vecs_joint = self.map_labels_to_vectors(label)
+                homomer_label_vecs_joint = self.map_labels_to_vectors(label)                
             data = {"seq" : fasta,
                 "label": homomer_label_vecs_joint, "pdbid": ID[0]}
 
         except Exception as e:
-            print('[LOG] Got exception for: ',index,self.pdbids[index],e)
-            traceback.print_exception(type(e), e, e.__traceback__)
-            index = index - 1 if index > 0 else index + 1
-            data = self.__getitem__(index)
-
+            print('[LOG] Got exception for: ',index,self.pdbids[index],e)            
+            traceback.print_exception(type(e), e, e.__traceback__)          
+            index = index - 1 if index > 0 else index + 1 
+            data = self.__getitem__(index)      
+            
         return data
 
 
@@ -852,7 +852,7 @@ class SimpleDataset(Dataset):
             if l in symm_map:
                 homomer_label = symm_map[l]
             else:
-                homomer_label = 0
+                homomer_label = 0 
             homomer_label_vecs.append(one_hot_encode(homomer_label, num_classes=nclasses))
         # address multilabel cases
         if len(homomer_label_vecs) > 1:
@@ -876,11 +876,11 @@ class SimpleDataset(Dataset):
                 "label": homomer_label_vecs, "pdbid": ID[0]}
 
         except Exception as e:
-            print('[LOG] Got exception for: ',index,self.pdb_IDs[index],e)
-            traceback.print_exception(type(e), e, e.__traceback__)
-            index = np.random.randint(self.__len__())
-            data = self.__getitem__(index)
-
+            print('[LOG] Got exception for: ',index,self.pdb_IDs[index],e)            
+            traceback.print_exception(type(e), e, e.__traceback__)          
+            index = np.random.randint(self.__len__()) 
+            data = self.__getitem__(index)      
+            
         return data
 
 
@@ -895,7 +895,7 @@ class LazyFileloaderDataset(Dataset):
         del df
 
     def __len__(self):
-        return self.length
+        return self.length        
 
     ## one-hot encodes labels
     def map_labels_to_vectors(self, label):
@@ -908,7 +908,7 @@ class LazyFileloaderDataset(Dataset):
                 if l.startswith('C'):
                     l = 'C17'
                 if l.startswith('D'):
-                    l = 'D12'
+                    l = 'D12'                    
             if l in symm_map:
                 homomer_label = symm_map[l]
                 if type(homomer_label) is list:
@@ -979,18 +979,18 @@ class WeightedHomomerDataLoader(LightningDataModule):
 
     def train_dataloader(self):
         train_dataset = WeightedDataset(self.train_pdb_dict, fasta_loader, self.params)
-        train_sampler = DistributedWeightedMySampler(train_dataset, num_example_per_epoch=self.params.num_example_per_epoch, shuffle=True, ddp=False)
+        train_sampler = DistributedWeightedMySampler(train_dataset, num_example_per_epoch=self.params.num_example_per_epoch, shuffle=True, ddp=False)        
         return DataLoader(train_dataset, batch_size=self.batch_size, sampler=train_sampler,
                           collate_fn=self.collate_fn, num_workers=4, pin_memory=True)
-
+    
     def test_dataloader(self):
-        test_dataset = SimpleDataset(self.test_pdb_dict, fasta_loader, self.params)
+        test_dataset = SimpleDataset(self.test_pdb_dict, fasta_loader, self.params)    
         return DataLoader(test_dataset, batch_size=self.batch_size,
                           collate_fn=self.collate_fn, num_workers=4, pin_memory=True)
 
     def val_dataloader(self):
         valid_dataset = SimpleDataset(self.valid_pdb_dict, fasta_loader, self.params)
-        return DataLoader(valid_dataset, batch_size=self.batch_size,
+        return DataLoader(valid_dataset, batch_size=self.batch_size, 
                           collate_fn=self.collate_fn, num_workers=4, pin_memory=True)
 
 
@@ -1033,8 +1033,8 @@ class WeightedDataset(Dataset):
 
     def get_example_weights(self):
         return self.weights
-
-
+    
+    
     def __len__(self):
         return len(self.pdb_IDs)
 
@@ -1042,12 +1042,12 @@ class WeightedDataset(Dataset):
         ID = self.pdb_dict[self.pdb_IDs[index]]  # ID is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'LENGTH')
         try:
             # data is a dict {"seq", "label"}
-            data = self.pdb_loader((ID[0], str(ID[1]), str(ID[2]), ID[3], self.pdb_IDs[index]), self.params)
+            data = self.pdb_loader((ID[0], str(ID[1]), str(ID[2]), ID[3], self.pdb_IDs[index]), self.params)  
         except Exception as e:
-            print('[LOG] Got exception for: ',index,self.pdb_IDs[index],e)
-            traceback.print_exception(type(e), e, e.__traceback__)
-            index = index - 1 if index > 0 else index + 1
-            data = self.__getitem__(index)
+            print('[LOG] Got exception for: ',index,self.pdb_IDs[index],e)            
+            traceback.print_exception(type(e), e, e.__traceback__)          
+            index = index - 1 if index > 0 else index + 1 
+            data = self.__getitem__(index)      
         return data
 
 
@@ -1064,11 +1064,11 @@ class ClusterBasedSampler(data.Sampler):
                 raise RuntimeError("Requires distributed package to be available")
             rank = dist.get_rank()
 
-        assert num_example_per_epoch % num_replicas == 0
+        assert num_example_per_epoch % num_replicas == 0 
         self.num_example_per_epoch = num_example_per_epoch
 
         self.dataset = dataset
-        self.batch_size = dataset.params.bs
+        self.batch_size = dataset.params.bs        
         self.num_replicas = num_replicas
         self.total_size = len(dataset)
         self.rank = rank
@@ -1081,9 +1081,9 @@ class ClusterBasedSampler(data.Sampler):
 
         if self.total_size < num_example_per_epoch:
             self.num_example_per_epoch = self.total_size
-        self.num_samples = self.num_example_per_epoch // self.num_replicas
+        self.num_samples = self.num_example_per_epoch // self.num_replicas            
         print('Num_examples_per_epoch, world_size, total_size, num_samples_per_gpu: ',
-              self.num_example_per_epoch, num_replicas, self.total_size, self.num_samples)
+              self.num_example_per_epoch, num_replicas, self.total_size, self.num_samples)       
 
     def _create_cluster_dict(self):
         cluster_indices_dict = {}
@@ -1101,7 +1101,7 @@ class ClusterBasedSampler(data.Sampler):
             if self.shuffle:
                 proteins = proteins[torch.randperm(len(proteins))]
             batches = batches + [proteins[i:i+self.batch_size] for i in range(0, len(proteins), self.batch_size)]
-
+        
         batches = torch.tensor(batches)
         if self.shuffle:
             batches = batches[torch.randperm(len(batches))]
@@ -1156,9 +1156,9 @@ class DistributedWeightedMySampler(data.Sampler):
 
         if self.total_size < self.num_example_per_epoch:
             self.num_example_per_epoch = self.total_size
-        self.num_samples = self.num_example_per_epoch // self.num_replicas
+        self.num_samples = self.num_example_per_epoch // self.num_replicas            
         print('Num_examples_per_epoch, world_size, total_size, num_samples_per_gpu: ',
-              self.num_example_per_epoch, num_replicas, self.total_size, self.num_samples)
+              self.num_example_per_epoch, num_replicas, self.total_size, self.num_samples)       
 
 
     def __iter__(self):
