@@ -30,3 +30,27 @@ python src/finetune.py --meta_data_file ../datasets/homomer_pdbids_hash_clusteri
 
 A jupyter notebook is available at src/load_chkpt_and_predict.ipynb that shows examples of how this is done for two different file formats
 
+## Predicting via command line
+The  `src/predict_oligmerization.py` script predicts the oligomerization states of protein sequences provided in a FASTA file, outputting the probabilities for each symmetry state with a probability >= 1%.
+```
+python predict_oligomerization.py -input_file <input_fasta> -chkpt_file <model_checkpoint> [-output_file <results.csv>] [-batch_size <n>]
+```
+* `-input_file`: Path to the input FASTA file containing the sequences for prediction (required).
+* `-chkpt_file`: Path to the model checkpoint file (required).
+* `-output_file`: Path to save the prediction results as a CSV file (default: ./results.csv).
+* `-batch_size`: Batch size for processing sequences (default: 1).
+
+Example output:
+```
+fasta_id, predicted_oligomerization_state
+ID1, "{'C1': 0.9, 'C2': 0.1, 'Other': 0.001}"
+ID2, "{'C4': 0.85, 'C6': 0.15, 'D3': 0.01}"
+```
+Which you can load with pandas like this:
+```
+import pandas as pd
+import ast
+df = pd.read_csv("results.csv")
+df['predicted_oligomerization_state'] = df['predicted_oligomerization_state'].apply(ast.literal_eval)
+```
+
