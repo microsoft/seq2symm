@@ -158,3 +158,4 @@ dependencies:
     - websocket-client==1.5.1
     - websockets==11.0.3
     - yarl==1.9.2
+    - -e .

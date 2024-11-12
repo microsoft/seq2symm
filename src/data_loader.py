@@ -776,7 +776,7 @@ class CoarseNFineJointDataset(data.Dataset):
             if self.loader:
                 fasta = self.loader((ID[0], str(ID[1])), self.params)
             else:
-                fasta = (ID[0], ID[4])
+                fasta = (ID[0], ID[5])
             label = ID[3] ## string: "C1, C2, C3"
             ## get multilabel label vector
             if self.params.use_soft_labels:
