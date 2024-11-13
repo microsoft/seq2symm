@@ -776,7 +776,7 @@ class CoarseNFineJointDataset(data.Dataset):
             if self.loader:
                 fasta = self.loader((ID[0], str(ID[1])), self.params)
             else:
-                fasta = (ID[0], ID[5])
+                fasta = (ID[0], ID[4])
             label = ID[3] ## string: "C1, C2, C3"
             ## get multilabel label vector
             if self.params.use_soft_labels:
@@ -807,7 +807,7 @@ class SimpleDataset(Dataset):
         ## construct cluster mapping
         self.cluster_labels = []
         if self.params.weighted_sampler == 1:
-            for pdbid in self.pdb_IDs:  # val is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'LENGTH')
+            for pdbid in self.pdb_IDs:  # val is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'SEQUENCE')
                 val = self.pdb_dict[pdbid]
                 self.cluster_labels.append(val[2])
 
@@ -821,7 +821,7 @@ class SimpleDataset(Dataset):
 
     def get_examples_weights(self):
         cluster_sizes = {}      # key: clus, val: number of proteins
-        for key, val in self.pdb_dict.items():  # val is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'LENGTH')
+        for key, val in self.pdb_dict.items():  # val is a tuple: ('PDBID', 'HASH', 'CLUSTER', 'SYMM', 'SEQUENCE')
             if val[2] not in cluster_sizes:
                 cluster_sizes[val[2]] = 0
             cluster_sizes[val[2]] += 1
