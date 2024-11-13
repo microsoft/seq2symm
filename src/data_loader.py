@@ -537,7 +537,7 @@ class TestFASTALoader(LightningDataModule):
         for record in SeqIO.parse(params.fasta_file, "fasta"):
             sequence_name = record.id      # This gets the sequence name (header)
             sequence = str(record.seq)
-            self.test_pdb_dict[sequence_name] = (sequence_name, "", '###', "", "U", sequence)
+            self.test_pdb_dict[sequence_name] = (sequence_name, '###', "", "U", sequence)
     
     def train_dataloader(self):
         print('Not a training dataloader')
