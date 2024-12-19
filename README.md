@@ -28,6 +28,7 @@ python src/finetune.py --meta_data_file ../datasets/homomer_pdbids_hash_clusteri
 
 # Predicting using the model
 
+## Jupyternotebook
 A jupyter notebook is available at src/load_chkpt_and_predict.ipynb that shows examples of how this is done for two different file formats
 
 ## Predicting via command line
