@@ -1,8 +1,7 @@
 # Introduction 
-Source code for 
-Seq2Symm: Rapid and accurate prediction of protein homo-oligomer symmetry
+Source code for Seq2Symm: Rapid and accurate prediction of protein homo-oligomer symmetry
 
-Rapid prediction of homo-oligomer symmetries using a single sequence as input
+Seq2Symm takes a single sequence as input
 
 # Getting Started
 Dependencies are in the yaml file esm2_finetune.yaml
