@@ -17,6 +17,9 @@ conda env create --name esm2 --file=esm2_finetune.yaml
   
   2.  the trained model
       http://files.ipd.uw.edu/pub/seq2symm/ESM2_model.ckpt
+
+  3.  data download links are here
+      https://github.com/microsoft/seq2symm/tree/main/datasets
       
 
 # Training the model
