@@ -20,6 +20,8 @@ conda env create --name esm2 --file=esm2_finetune.yaml
 
   3.  data download links are here
       https://github.com/microsoft/seq2symm/tree/main/datasets
+
+      All code, datasets, model, predictions are also available on Zenodo: http://doi.org/10.5281/zenodo.14659968
       
 
 # Training the model
