@@ -4,6 +4,17 @@ Source code for Seq2Symm: Rapid and accurate prediction of protein homo-oligomer
 Seq2Symm takes a single sequence as input
 
 # Getting Started
+
+There are two options: do inference using Google Colab or a local installation where you can do both inference or training
+
+## Google Colab notebook for small-scale inference
+
+This self-contained notebook will do inference on input protein sequences
+
+https://colab.research.google.com/drive/1ptQTyC22ExxJ3BnSK6dnPaCeg7J8i3le?usp=sharing
+
+## Conda environment for local installation and large-scale inference and training
+
 Dependencies are in the yaml file esm2_finetune.yaml
 
 ```
