@@ -11,7 +11,7 @@ There are two options: do inference using Google Colab or a local installation w
 
 This self-contained notebook will do inference on input protein sequences
 
-https://colab.research.google.com/drive/1ptQTyC22ExxJ3BnSK6dnPaCeg7J8i3le?usp=sharing
+https://colab.research.google.com/drive/1ptQTyC22ExxJ3BnSK6dnPaCeg7J8i3le#scrollTo=CJm12VgOiDfj
 
 ## Conda environment for local installation and large-scale inference and training
 
