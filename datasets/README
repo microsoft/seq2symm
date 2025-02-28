@@ -1,6 +1,9 @@
 
 Datasets:
-Note: all datasets are also available on a Zenodo repository here, including the source data for all figures and the supplementary information: http://doi.org/10.5281/zenodo.14659968
+Note: all datasets are also available on a Zenodo repository here, including the source data for all figures and the supplementary information: 
+
+latest version: https://zenodo.org/records/14681124
+link to zenodo repo: http://doi.org/10.5281/zenodo.14659968
 
   1.  The homo-oligomer PDB ids with the labels were downloaded from the PDB: https://www.rcsb.org/ 
       This labeled data and the train/val/test splits can be downloaded here: 
