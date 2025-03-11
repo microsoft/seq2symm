@@ -27,13 +27,16 @@ conda env create --name esm2 --file=esm2_finetune.yaml
 
 # Downloads
 
-  1.  the predictions from the model on various datasets, predictions on proteomes
+  0. Latest model (please see below for the model used in the paper)
+      https://drive.google.com/file/d/1Hk4idiCGNnn5B0KUTCsnMtv1vtvWb6lh/view?usp=sharing
+
+  2.  the predictions from the model on various datasets, predictions on proteomes
       http://files.ipd.uw.edu/pub/seq2symm/predictions.zip
   
-  2.  the trained model
+  3.  the trained model
       http://files.ipd.uw.edu/pub/seq2symm/ESM2_model.ckpt
 
-  3.  data download links are here
+  4.  data download links are here
       https://github.com/microsoft/seq2symm/tree/main/datasets
 
       All code, datasets, model, predictions are also available on Zenodo: http://doi.org/10.5281/zenodo.14659968
