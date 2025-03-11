@@ -1,5 +1,9 @@
 # Introduction 
-Source code for Seq2Symm: Rapid and accurate prediction of protein homo-oligomer symmetry
+Source code for Seq2Symm: Rapid and accurate prediction of protein homo-oligomer symmetry, published here:
+
+Meghana Kshirsagar, Artur Meller, Ian R. Humphreys, Samuel Sledzieski, Yixi Xu, Rahul Dodhia, Eric Horvitz, Bonnie Berger, Gregory R. Bowman, Juan Lavista Ferres, David Baker, Minkyung Baek, _Nature Communications_
+
+https://www.nature.com/articles/s41467-025-57148-3
 
 Seq2Symm takes a single sequence as input
 
