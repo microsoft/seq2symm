@@ -9,7 +9,7 @@ Seq2Symm takes a single sequence as input
 
 # Getting Started
 
-There are two options: do inference using Google Colab or a local installation where you can do both inference or training
+There are two options: do inference using Google Colab or a local installation where you can do both inference and/or training
 
 ## Google Colab notebook for small-scale inference
 
