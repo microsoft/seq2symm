@@ -5,7 +5,7 @@ Meghana Kshirsagar, Artur Meller, Ian R. Humphreys, Samuel Sledzieski, Yixi Xu, 
 
 https://www.nature.com/articles/s41467-025-57148-3
 
-Seq2Symm takes a single sequence as input
+Seq2Symm takes a protein sequence as input and predicts the protein symmetry, such as 'C1', 'C2', 'C5', 'D2', 'D3', 'D5', 'H', 'O', 'T', 'I' etc. for 17 different symmetry types.
 
 # Getting Started
 
