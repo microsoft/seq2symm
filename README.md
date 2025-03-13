@@ -27,7 +27,7 @@ conda env create --name esm2 --file=esm2_finetune.yaml
 
 # Downloads
 
-  0. Latest model (please see below for the model used in the paper)
+  0. Latest model trained in March 2025 (please look under 3. for the model used for all the results in the paper)
       https://drive.google.com/file/d/1Hk4idiCGNnn5B0KUTCsnMtv1vtvWb6lh/view?usp=sharing
 
   2.  the predictions from the model on various datasets, predictions on proteomes
